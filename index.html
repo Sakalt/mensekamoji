@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カスタムグラフィックス表示</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+        #canvas {
+            border: 1px solid black;
+            margin: 20px auto;
+        }
+        .description {
+            margin-top: 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="1920" height="1280"></canvas>
+    <div id="description" class="description"></div>
+    <script>
+        async function loadJSON(file) {
+            const response = await fetch(file);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        }
+
+        function drawContour(context, contour, offsetX, offsetY) {
+            context.beginPath();
+            context.moveTo(contour[0][0] + offsetX, contour[0][1] + offsetY);
+            for (let i = 1; i < contour.length; i++) {
+                context.lineTo(contour[i][0] + offsetX, contour[i][1] + offsetY);
+            }
+            context.closePath();
+            context.stroke();
+        }
+
+        function displayText(context, text, x, y, size) {
+            context.font = `${size}px Arial`;
+            context.fillText(text, x, y);
+        }
+
+        async function initialize() {
+            const contourData = await loadJSON('contour.json');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            const margin = 20;
+            let x = margin;
+            let y = margin;
+            const boxWidth = 180;
+            const boxHeight = 100;
+            const textSize = 20;
+            
+            for (const [category, characters] of Object.entries(contourData)) {
+                context.font = '20px Arial';
+                context.fillText(category, x, y);
+                y += 30;
+
+                for (const [char, details] of Object.entries(characters)) {
+                    drawContour(context, details.contour, x, y);
+                    displayText(context, details.reading, x, y + boxHeight - 10, textSize);
+                    
+                    y += boxHeight + 20;
+                    if (y > canvas.height - boxHeight) {
+                        y = margin;
+                        x += boxWidth + 30;
+                    }
+                }
+                
+                x = margin;
+                y += 50;
+            }
+        }
+
+        initialize();
+    </script>
+</body>
+</html>
